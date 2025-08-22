@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: useradm
+      POSTGRES_PASSWORD: changeme!
+      POSTGRES_DB: abcD018899!
+    ports:
+      - "5432:5432"            # host:container
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_conf/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres_conf/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
