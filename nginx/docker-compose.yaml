@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./sites-available:/etc/nginx/sites-available:ro
+      - ./sites-enabled:/etc/nginx/sites-enabled
+      - ./scripts/enable-sites.sh:/docker-entrypoint.d/99-enable-sites.sh:ro
+    environment:
+      - TZ=UTC
+    restart: always
+    networks:
+      - quick-compose
+
+networks:
+  quick-compose:
+    external: true
+    name: quick-compose
