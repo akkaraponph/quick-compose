@@ -15,8 +15,12 @@ services:
     restart: always
     networks:
       - quick-compose
+      - external-network
 
 networks:
   quick-compose:
     external: true
     name: quick-compose
+  external-network:
+    external: true
+    name: quick-compose_external-network

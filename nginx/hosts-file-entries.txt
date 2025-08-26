@@ -1,0 +1,30 @@
+# DNS Configuration for Quick Compose Stack
+# Add these entries to your local hosts file
+
+# For Windows: C:\Windows\System32\drivers\etc\hosts
+# For Linux/Mac: /etc/hosts
+
+# Quick Compose - Base Sites
+127.0.0.1   a.localhost
+127.0.0.1   b.localhost
+
+# Loki Stack - Monitoring Services
+127.0.0.1   grafana.localhost       # Grafana Dashboard - Port 3000
+127.0.0.1   loki.localhost          # Loki Log Aggregation - Port 3100
+127.0.0.1   prometheus.localhost    # Prometheus Metrics - Port 9090
+127.0.0.1   alertmanager.localhost  # AlertManager - Port 9093
+127.0.0.1   cadvisor.localhost      # cAdvisor Container Metrics - Port 8080
+
+# MSSQL Stack - Database Management
+127.0.0.1   mssql-gui.localhost     # CloudBeaver Database GUI - Port 8978
+127.0.0.1   mssql-adminer.localhost # Adminer Database Admin - Port 8080
+
+# Instructions:
+# 1. Open your hosts file as administrator (Windows) or with sudo (Linux/Mac)
+# 2. Add the lines above to the end of the file
+# 3. Save the file
+# 4. Restart your browser or flush DNS cache
+
+# Windows: ipconfig /flushdns
+# Linux: sudo systemctl restart systemd-resolved
+# Mac: sudo dscacheutil -flushcache

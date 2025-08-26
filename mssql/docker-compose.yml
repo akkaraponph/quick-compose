@@ -1,0 +1,110 @@
+version: '3.8'
+
+networks:
+  app:
+    driver: bridge
+  external-network:
+    external: true
+    name: quick-compose_external-network
+
+volumes:
+  # Note: not used when paths are bind-mounted. Declared for clarity.
+  mssql_data:
+
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql
+    environment:
+      - ACCEPT_EULA=${ACCEPT_EULA}
+      - SA_PASSWORD=${SA_PASSWORD}
+      - TZ=${TZ}
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./mssql-data:/var/opt/mssql
+      # OPTIONAL: cap SQL Server max memory by mounting mssql.conf
+      - ./mssql-conf/mssql.conf:/var/opt/mssql/mssql.conf:ro
+    restart: unless-stopped
+    networks:
+      - app
+      - external-network
+    
+    # Optional container resource limits (non‑Swarm)
+    # Docker Compose (classic) accepts 'mem_limit' and 'cpus' fields.
+    # These help keep the container's OS-level memory usage in check.
+    mem_limit: 4g
+    cpus: "2.0"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P ${SA_PASSWORD} -Q 'SELECT 1' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+    labels:
+      - "traefik.enable=false"  # Database should not be exposed via HTTP
+
+  mssql-backup:
+    image: mcr.microsoft.com/mssql-tools
+    container_name: mssql_backup
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      - SA_PASSWORD=${SA_PASSWORD}
+      - MSSQL_HOST=${MSSQL_HOST}
+      - MSSQL_DB=${MSSQL_DB}
+      - TZ=${TZ}
+    volumes:
+      - ./mssql-backups:/backups
+      - ./backup-scripts:/scripts
+    entrypoint: ["/bin/bash", "/scripts/backup.sh"]
+    restart: unless-stopped
+    networks:
+      - app
+    labels:
+      - "traefik.enable=false"
+
+  # Optional: SQL Server Management Studio Web (CloudBeaver) for GUI access
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: mssql_gui
+    ports:
+      - "8978:8978"
+    volumes:
+      - ./cloudbeaver-data:/opt/cloudbeaver/workspace
+    environment:
+      - CB_ADMIN_NAME=admin
+      - CB_ADMIN_PASSWORD=admin123
+    depends_on:
+      - mssql
+    restart: unless-stopped
+    networks:
+      - app
+      - external-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mssql-gui.rule=Host(`mssql-gui.localhost`)"
+      - "traefik.http.services.mssql-gui.loadbalancer.server.port=8978"
+
+  # Optional: Adminer for lightweight database administration
+  adminer:
+    image: adminer:latest
+    container_name: mssql_adminer
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=mssql
+    depends_on:
+      - mssql
+    restart: unless-stopped
+    networks:
+      - app
+      - external-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mssql-adminer.rule=Host(`mssql-adminer.localhost`)"
+      - "traefik.http.services.mssql-adminer.loadbalancer.server.port=8080"
